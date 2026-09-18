@@ -1,0 +1,40 @@
+workflows:
+  e2008-android-debug:
+    name: e-2008 CAN - Android APK
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+
+    environment:
+      java: 17
+      vars:
+        PACKAGE_NAME: "no.e2008.canlogger"
+
+    scripts:
+      - name: Set Android SDK location
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          echo "Android SDK: $ANDROID_SDK_ROOT"
+
+      - name: Create Gradle wrapper if missing
+        script: |
+          cd "$CM_BUILD_DIR"
+          if [ ! -f gradlew ]; then
+            echo "Gradle wrapper mangler - lager Gradle 8.7 wrapper"
+            gradle wrapper --gradle-version 8.7
+          fi
+          chmod +x gradlew
+          ./gradlew --version
+
+      - name: Build debug APK
+        script: |
+          cd "$CM_BUILD_DIR"
+          ./gradlew --no-daemon clean assembleDebug
+
+      - name: Show APK
+        script: |
+          echo "Ferdige APK-filer:"
+          find "$CM_BUILD_DIR/app/build/outputs/apk" -type f -name "*.apk" -print || true
+
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/reports/**
